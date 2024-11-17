@@ -124,6 +124,24 @@ const PROVIDER_LIST: ProviderInfo[] = [
     ],
     getApiKeyLink: 'https://huggingface.co/settings/tokens',
     labelForGetApiKey: 'Get HuggingFace Access Token'
+  }, {
+    name: 'Together',
+    staticModels: [],
+    getDynamicModels: getTogetherModels,
+    getApiKeyLink: "https://api.together.xyz/settings/api-keys",
+    labelForGetApiKey: "Get Together API Key",
+    icon: "i-ph:together",
+  }, {
+    name: 'AzureOpenAI',
+    staticModels: [
+      { name: 'gpt-4', label: 'GPT-4 (Azure)', provider: 'AzureOpenAI' },
+      { name: 'gpt-35-turbo', label: 'GPT-3.5 Turbo (Azure)', provider: 'AzureOpenAI' },
+      { name: 'gpt-4-turbo', label: 'GPT-4 Turbo (Azure)', provider: 'AzureOpenAI' }
+    ],
+    getDynamicModels: null,
+    getApiKeyLink: "https://portal.azure.com/#create/Microsoft.CognitiveServicesOpenAI",
+    labelForGetApiKey: "Get Azure OpenAI API Key",
+    icon: "i-ph:cloud",
   }
 ];
 
@@ -231,7 +249,27 @@ async function getLMStudioModels(): Promise<ModelInfo[]> {
   }
 }
 
-
+async function getTogetherModels(): Promise<ModelInfo[]> {
+  try {
+    const response = await fetch('https://api.together.xyz/models/list', {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    return data.models
+      .filter((m: any) => m.task === 'text-generation' || m.task === 'chat')
+      .map((m: any) => ({
+        name: m.name,
+        label: `${m.display_name || m.name} (${Math.floor(m.context_length / 1000)}k ctx)`,
+        provider: 'Together'
+      }));
+  } catch (e) {
+    console.error('Error fetching Together models:', e);
+    return [];
+  }
+}
 
 async function initializeModelList(): Promise<ModelInfo[]> {
   MODEL_LIST = [...(await Promise.all(

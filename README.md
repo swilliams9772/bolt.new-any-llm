@@ -28,8 +28,8 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ Run agents in the backend as opposed to a single model call (@shaq)
 - ✅ Mobile friendly (@shaq)
 - ✅ LM Studio Integration (@shaq)
-- ⬜ Together Integration
-- ⬜ Azure Open AI API Integration
+- ✅ Together Integration (@shaq)
+- ✅ Azure Open AI API Integration (@shaq)
 - ⬜ Perplexity Integration
 - ⬜ Vertex AI Integration
 - ⬜ Cohere Integration

@@ -136,7 +136,31 @@ export function getHuggingFaceModel(apiKey: string, model: string) {
   };
 }
 
-export function getModel(provider: string, model: string, env: Env, apiKeys?: Record<string, string>) {
+export function getTogetherModel(apiKey: string, model: string) {
+  const together = createOpenAI({
+    baseURL: 'https://api.together.xyz/v1',
+    apiKey,
+  });
+
+  return together(model);
+}
+
+export function getAzureOpenAIModel(apiKey: string, model: string, baseURL: string) {
+  const azureOpenAI = createOpenAI({
+    apiKey,
+    baseURL,
+    defaultQuery: {
+      'api-version': '2024-02-15-preview'
+    },
+    defaultHeaders: {
+      'api-key': apiKey
+    }
+  });
+
+  return azureOpenAI(model);
+}
+
+export async function getModel(provider: string, model: string, env: Env, apiKeys?: Record<string, string>) {
   const maxRetries = 3;
   let retryCount = 0;
 
@@ -170,6 +194,10 @@ export function getModel(provider: string, model: string, env: Env, apiKeys?: Re
             return getXAIModel(apiKey, model);
           case 'HuggingFace':
             return getHuggingFaceModel(apiKey, model);
+          case 'Together':
+            return getTogetherModel(apiKey, model);
+          case 'AzureOpenAI':
+            return getAzureOpenAIModel(apiKey, model, baseURL);
           default:
             if (provider === 'Ollama') {
               // Special handling for Ollama models

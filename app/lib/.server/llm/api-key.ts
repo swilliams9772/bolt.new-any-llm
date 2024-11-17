@@ -35,6 +35,10 @@ export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Re
       return env.XAI_API_KEY || cloudflareEnv.XAI_API_KEY;
     case 'HuggingFace':
       return userApiKeys?.HuggingFace || env.HUGGINGFACE_API_KEY || cloudflareEnv.HUGGINGFACE_API_KEY;
+    case 'Together':
+      return env.TOGETHER_API_KEY || cloudflareEnv.TOGETHER_API_KEY;
+    case 'AzureOpenAI':
+      return env.AZURE_OPENAI_API_KEY || cloudflareEnv.AZURE_OPENAI_API_KEY;
     default:
       return "";
   }
@@ -52,6 +56,8 @@ export function getBaseURL(cloudflareEnv: Env, provider: string) {
           baseUrl = baseUrl.replace("localhost", "host.docker.internal");
         }
         return baseUrl;
+    case 'AzureOpenAI':
+      return cloudflareEnv.AZURE_OPENAI_ENDPOINT || 'https://YOUR_RESOURCE_NAME.openai.azure.com';
     default:
       return "";
   }
