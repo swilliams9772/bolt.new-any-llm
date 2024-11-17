@@ -40,7 +40,17 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ Have LLM plan the project in a MD file for better results/transparency (@shaq)
 - ✅ VSCode Integration with git-like confirmations (@shaq)
 - ✅ Upload documents for knowledge - UI design templates, a code base to reference coding style, etc. (@shaq)
-- ⬜ Voice prompting
+- ✅ Voice prompting (@shaq)
+
+## Voice Input
+
+The application now supports voice input for prompts:
+1. Click the microphone icon to start recording
+2. Speak your prompt
+3. The transcribed text will be added to your input
+4. Edit the text if needed before sending
+
+Note: Voice input requires a modern browser with speech recognition support.
 
 ## Project Planning
 
