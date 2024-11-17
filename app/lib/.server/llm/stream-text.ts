@@ -5,6 +5,7 @@ import { getModel } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt } from './prompts';
 import { MODEL_LIST, DEFAULT_MODEL, DEFAULT_PROVIDER, MODEL_REGEX, PROVIDER_REGEX } from '~/utils/constants';
+import { cacheManager } from '../cache/cache-manager';
 
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;
@@ -65,7 +66,7 @@ function chunkResponse(content: string, maxChunkSize: number = 1000): string[] {
   return chunks;
 }
 
-export function streamText(
+export async function* streamText(
   messages: Messages, 
   env: Env, 
   options?: StreamingOptions,
@@ -87,22 +88,43 @@ export function streamText(
       return { ...message, content };
     }
 
-    return message; // No changes for non-user messages
+    return message;
   });
 
-  return _streamText({
+  // Check cache first
+  const cachedResponse = cacheManager.get(processedMessages, currentProvider, currentModel);
+  if (cachedResponse) {
+    // Return cached response as a stream
+    const chunks = chunkResponse(cachedResponse);
+    for (const chunk of chunks) {
+      yield chunk;
+    }
+    return;
+  }
+
+  // If not in cache, proceed with API call
+  let fullResponse = '';
+  const stream = await _streamText({
     model: getModel(currentProvider, currentModel, env, apiKeys),
     system: getSystemPrompt(),
     maxTokens: MAX_TOKENS,
     messages: convertToCoreMessages(processedMessages),
     ...options,
-    // Add streaming options for smaller models
     chunkSize: 512,
     onResponse: async (response) => {
+      fullResponse += response;
       if (response.length > MAX_TOKENS) {
         return chunkResponse(response);
       }
       return response;
     }
   });
+
+  // Stream the response while collecting it
+  for await (const chunk of stream) {
+    yield chunk;
+  }
+
+  // Cache the full response
+  cacheManager.set(processedMessages, fullResponse, currentProvider, currentModel);
 }

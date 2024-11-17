@@ -35,7 +35,7 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ Cohere Integration (@shaq)
 - ✅ Deploy directly to Vercel/Netlify/other similar platforms (@shaq)
 - ✅ Ability to revert code to earlier version (@shaq)
-- ⬜ Prompt caching
+- ✅ Prompt caching (@shaq)
 - ⬜ Better prompt enhancing
 - ⬜ Have LLM plan the project in a MD file for better results/transparency
 - ⬜ VSCode Integration with git-like confirmations
