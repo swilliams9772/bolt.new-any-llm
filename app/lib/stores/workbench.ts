@@ -409,28 +409,33 @@ export class WorkbenchStore {
   }
 
   async pushToGitHub(repoName: string, githubUsername: string, ghToken: string) {
-
     try {
-      // Get the GitHub auth token from environment variables
-      const githubToken = ghToken;
-
-      const owner = githubUsername;
-
-      if (!githubToken) {
-        throw new Error('GitHub token is not set in environment variables');
+      const octokit = new Octokit({ auth: ghToken });
+      
+      // First create a fork of the original repo
+      try {
+        await octokit.repos.createFork({
+          owner: 'coleam00',
+          repo: 'bolt.new-any-llm'
+        });
+        
+        // Wait a bit for fork to be ready
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+      } catch (error) {
+        console.log('Fork already exists or cannot be created');
       }
 
-      // Initialize Octokit with the auth token
-      const octokit = new Octokit({ auth: githubToken });
-
-      // Check if the repository already exists before creating it
-      let repo: RestEndpointMethodTypes["repos"]["get"]["response"]['data']
+      // Now create/update repo in the fork
+      let repo;
       try {
-        let resp = await octokit.repos.get({ owner: owner, repo: repoName });
-        repo = resp.data
+        let resp = await octokit.repos.get({ 
+          owner: githubUsername, 
+          repo: repoName 
+        });
+        repo = resp.data;
       } catch (error) {
         if (error instanceof Error && 'status' in error && error.status === 404) {
-          // Repository doesn't exist, so create a new one
           const { data: newRepo } = await octokit.repos.createForAuthenticatedUser({
             name: repoName,
             private: false,
@@ -438,8 +443,7 @@ export class WorkbenchStore {
           });
           repo = newRepo;
         } else {
-          console.log('cannot create repo!');
-          throw error; // Some other error occurred
+          throw error;
         }
       }
 
@@ -464,53 +468,61 @@ export class WorkbenchStore {
         })
       );
 
-      const validBlobs = blobs.filter(Boolean); // Filter out any undefined blobs
+      const validBlobs = blobs.filter(Boolean);
 
       if (validBlobs.length === 0) {
         throw new Error('No valid files to push');
       }
 
-      // Get the latest commit SHA (assuming main branch, update dynamically if needed)
+      // Get the default branch reference
       const { data: ref } = await octokit.git.getRef({
         owner: repo.owner.login,
         repo: repo.name,
-        ref: `heads/${repo.default_branch || 'main'}`, // Handle dynamic branch
+        ref: `heads/${repo.default_branch}`,
       });
-      const latestCommitSha = ref.object.sha;
 
-      // Create a new tree
-      const { data: newTree } = await octokit.git.createTree({
+      // Get the current commit
+      const { data: commit } = await octokit.git.getCommit({
         owner: repo.owner.login,
         repo: repo.name,
-        base_tree: latestCommitSha,
-        tree: validBlobs.map((blob) => ({
-          path: blob!.path,
+        commit_sha: ref.object.sha,
+      });
+
+      // Create tree
+      const { data: tree } = await octokit.git.createTree({
+        owner: repo.owner.login,
+        repo: repo.name,
+        base_tree: commit.tree.sha,
+        tree: validBlobs.map(({ path, sha }) => ({
+          path,
           mode: '100644',
           type: 'blob',
-          sha: blob!.sha,
+          sha,
         })),
       });
 
-      // Create a new commit
+      // Create commit
       const { data: newCommit } = await octokit.git.createCommit({
         owner: repo.owner.login,
         repo: repo.name,
-        message: 'Initial commit from your app',
-        tree: newTree.sha,
-        parents: [latestCommitSha],
+        message: 'Update from Bolt.new',
+        tree: tree.sha,
+        parents: [commit.sha],
       });
 
-      // Update the reference
+      // Update reference
       await octokit.git.updateRef({
         owner: repo.owner.login,
         repo: repo.name,
-        ref: `heads/${repo.default_branch || 'main'}`, // Handle dynamic branch
+        ref: `heads/${repo.default_branch}`,
         sha: newCommit.sha,
       });
 
-      alert(`Repository created and code pushed: ${repo.html_url}`);
+      toast.success('Successfully pushed to GitHub fork!');
+      
     } catch (error) {
-      console.error('Error pushing to GitHub:', error instanceof Error ? error.message : String(error));
+      console.error('Error pushing to GitHub:', error);
+      toast.error('Failed to push to GitHub: ' + error.message);
     }
   }
 }
