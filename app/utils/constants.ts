@@ -114,6 +114,16 @@ const PROVIDER_LIST: ProviderInfo[] = [
     getApiKeyLink: 'https://lmstudio.ai/',
     labelForGetApiKey: 'Get LMStudio',
     icon: "i-ph:cloud-arrow-down",
+  }, {
+    name: 'HuggingFace',
+    staticModels: [
+      { name: 'mistralai/Mixtral-8x7B-Instruct-v0.1', label: 'Mixtral 8x7B', provider: 'HuggingFace' },
+      { name: 'meta-llama/Llama-2-70b-chat-hf', label: 'Llama 2 70B', provider: 'HuggingFace' },
+      { name: 'tiiuae/falcon-180B-chat', label: 'Falcon 180B', provider: 'HuggingFace' },
+      { name: 'codellama/CodeLlama-34b-Instruct-hf', label: 'CodeLlama 34B', provider: 'HuggingFace' }
+    ],
+    getApiKeyLink: 'https://huggingface.co/settings/tokens',
+    labelForGetApiKey: 'Get HuggingFace Access Token'
   }
 ];
 

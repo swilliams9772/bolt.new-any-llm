@@ -168,4 +168,24 @@ $code-font-size: 13px;
       background-color: #f6f8fa;
     }
   }
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    
+    h1 {
+      font-size: 1.75em;
+    }
+    
+    h2 {
+      font-size: 1.35em;
+    }
+    
+    h3 {
+      font-size: 1.15em;
+    }
+    
+    :not(pre) > code {
+      font-size: 12px;
+    }
+  }
 }

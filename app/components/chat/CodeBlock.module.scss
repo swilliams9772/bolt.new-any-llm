@@ -7,4 +7,23 @@
     padding: 2px 6px;
     height: 30px;
   }
+
+  @media (max-width: 640px) {
+    button:before {
+      left: -43px;
+      font-size: 11px;
+      padding: 2px 4px;
+      height: 26px;
+    }
+  }
+}
+
+// Add mobile-specific styles for code blocks
+pre {
+  @media (max-width: 640px) {
+    padding: 16px 12px;
+    font-size: 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }

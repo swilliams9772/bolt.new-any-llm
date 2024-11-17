@@ -7,6 +7,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { ollama } from 'ollama-ai-provider';
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createMistral } from '@ai-sdk/mistral';
+import { HfInference } from '@huggingface/inference';
 
 export function getAnthropicModel(apiKey: string, model: string) {
   const anthropic = createAnthropic({
@@ -99,6 +100,42 @@ export function getXAIModel(apiKey: string, model: string) {
 
   return openai(model);
 }
+
+export function getHuggingFaceModel(apiKey: string, model: string) {
+  const hf = new HfInference(apiKey);
+  
+  return {
+    chat: async function*(messages: any[]) {
+      // Convert messages to HF format
+      const prompt = messages.map(m => 
+        `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`
+      ).join('\n\n') + '\n\nAssistant:';
+
+      try {
+        const response = await hf.textGeneration({
+          model: model,
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 1024,
+            temperature: 0.7,
+            top_p: 0.95,
+            repetition_penalty: 1.1,
+            stream: true
+          }
+        });
+
+        // Stream the response
+        for await (const chunk of response) {
+          yield { content: chunk.token.text };
+        }
+      } catch (error) {
+        console.error('HuggingFace API error:', error);
+        throw error;
+      }
+    }
+  };
+}
+
 export function getModel(provider: string, model: string, env: Env, apiKeys?: Record<string, string>) {
   const maxRetries = 3;
   let retryCount = 0;
@@ -131,6 +168,8 @@ export function getModel(provider: string, model: string, env: Env, apiKeys?: Re
             return getLMStudioModel(baseURL, model);
           case 'xAI':
             return getXAIModel(apiKey, model);
+          case 'HuggingFace':
+            return getHuggingFaceModel(apiKey, model);
           default:
             if (provider === 'Ollama') {
               // Special handling for Ollama models

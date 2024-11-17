@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Preventing TS checks with files presented in the video for a better presentation.
 import type { Message } from 'ai';
-import React, { type RefCallback, useEffect } from 'react';
+import React, { type RefCallback, useEffect, useCallback } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { IconButton } from '~/components/ui/IconButton';
@@ -27,9 +27,11 @@ const EXAMPLE_PROMPTS = [
 
 const providerList = PROVIDER_LIST;
 
-const ModelSelector = ({ model, setModel, provider, setProvider, modelList, providerList }) => {
+const ModelSelector = ({ model, setModel, provider, setProvider, modelList, providerList, isMobile }) => {
   return (
-    <div className="mb-2 flex gap-2">
+    <div className={classNames("mb-2 flex gap-2", {
+      "flex-col": isMobile
+    })}>
       <select
         value={provider?.name}
         onChange={(e) => {
@@ -37,7 +39,9 @@ const ModelSelector = ({ model, setModel, provider, setProvider, modelList, prov
           const firstModel = [...modelList].find((m) => m.provider == e.target.value);
           setModel(firstModel ? firstModel.name : '');
         }}
-        className="flex-1 p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-bolt-elements-focus transition-all"
+        className={classNames("flex-1 p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-bolt-elements-focus transition-all", {
+          "text-sm": isMobile
+        })}
       >
         {providerList.map((provider) => (
           <option key={provider.name} value={provider.name}>
@@ -49,8 +53,10 @@ const ModelSelector = ({ model, setModel, provider, setProvider, modelList, prov
         key={provider?.name}
         value={model}
         onChange={(e) => setModel(e.target.value)}
-        style={{ maxWidth: '70%' }}
-        className="flex-1 p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-bolt-elements-focus transition-all"
+        style={{ maxWidth: isMobile ? '100%' : '70%' }}
+        className={classNames("flex-1 p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-bolt-elements-focus transition-all", {
+          "text-sm": isMobile
+        })}
       >
         {[...modelList]
           .filter((e) => e.provider == provider?.name && e.name)
@@ -114,6 +120,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
     const [modelList, setModelList] = useState(MODEL_LIST);
+    const isMobileView = useCallback(() => isMobile(), []);
 
     useEffect(() => {
       // Load API keys from cookies on component mount
@@ -158,6 +165,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         className={classNames(
           styles.BaseChat,
           'relative flex h-full w-full overflow-hidden bg-bolt-elements-background-depth-1',
+          {
+            'flex-col': isMobileView(),
+          }
         )}
         data-chat-visible={showChat}
       >
@@ -165,8 +175,12 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={scrollRef} className="flex overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
             {!chatStarted && (
-              <div id="intro" className="mt-[26vh] max-w-chat mx-auto text-center">
-                <h1 className="text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in">
+              <div id="intro" className={classNames("mt-[26vh] max-w-chat mx-auto text-center", {
+                "mt-[15vh]": isMobileView()
+              })}>
+                <h1 className={classNames("text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in", {
+                  "text-4xl": isMobileView()
+                })}>
                   Where ideas begin
                 </h1>
                 <p className="text-xl mb-8 text-bolt-elements-textSecondary animate-fade-in animation-delay-200">
@@ -194,6 +208,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               <div
                 className={classNames('relative w-full max-w-chat mx-auto z-prompt', {
                   'sticky bottom-0': chatStarted,
+                  'px-2': isMobileView(),
                 })}
               >
                 <ModelSelector
@@ -204,6 +219,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   provider={provider}
                   setProvider={setProvider}
                   providerList={PROVIDER_LIST}
+                  isMobile={isMobileView()}
                 />
                 {provider && (
                   <APIKeyManager

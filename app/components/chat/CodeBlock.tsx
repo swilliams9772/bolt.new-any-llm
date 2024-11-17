@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, useCallback } from 'react';
 import { bundledLanguages, codeToHtml, isSpecialLang, type BundledLanguage, type SpecialLanguage } from 'shiki';
 import { classNames } from '~/utils/classNames';
 import { createScopedLogger } from '~/utils/logger';
@@ -19,6 +19,7 @@ export const CodeBlock = memo(
   ({ className, code, language = 'plaintext', theme = 'dark-plus', disableCopy = false }: CodeBlockProps) => {
     const [html, setHTML] = useState<string | undefined>(undefined);
     const [copied, setCopied] = useState(false);
+    const isMobileView = useCallback(() => isMobile(), []);
 
     const copyToClipboard = () => {
       if (copied) {
@@ -56,6 +57,7 @@ export const CodeBlock = memo(
             'bg-white absolute top-[10px] right-[10px] rounded-md z-10 text-lg flex items-center justify-center opacity-0 group-hover:opacity-100',
             {
               'rounded-l-0 opacity-100': copied,
+              'opacity-100': isMobileView(),
             },
           )}
         >
@@ -75,7 +77,10 @@ export const CodeBlock = memo(
             </button>
           )}
         </div>
-        <div dangerouslySetInnerHTML={{ __html: html ?? '' }}></div>
+        <div 
+          className={classNames({ 'overflow-x-auto': isMobileView() })}
+          dangerouslySetInnerHTML={{ __html: html ?? '' }}
+        ></div>
       </div>
     );
   },

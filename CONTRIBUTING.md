@@ -74,6 +74,7 @@ pnpm install
 GROQ_API_KEY=XXX
 OPENAI_API_KEY=XXX
 ANTHROPIC_API_KEY=XXX
+HUGGINGFACE_API_KEY=your_huggingface_token_here
 ...
 ```
    - Optionally set debug level:

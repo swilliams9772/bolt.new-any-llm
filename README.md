@@ -2,7 +2,7 @@
 
 # Bolt.new Fork by Cole Medin
 
-This fork of Bolt.new allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
+This fork of Bolt.new allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, Groq, HuggingFace, or other models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
 
 # Requested Additions to this Fork - Feel Free to Contribute!!
 
@@ -20,6 +20,7 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ Publish projects directly to GitHub (@goncaloalves)
 - ✅ Ability to enter API keys in the UI (@ali00209)
 - ✅ xAI Grok Beta Integration (@milutinke)
+- ✅ HuggingFace Integration
 - ⬜ **HIGH PRIORITY** - Prevent Bolt from rewriting files as often (file locking and diffs)
 - ⬜ **HIGH PRIORITY** - Better prompting for smaller LLMs (code window sometimes doesn't start)
 - ⬜ **HIGH PRIORITY** Load local projects into the app
@@ -29,7 +30,6 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ⬜ LM Studio Integration
 - ⬜ Together Integration
 - ⬜ Azure Open AI API Integration
-- ⬜ HuggingFace Integration
 - ⬜ Perplexity Integration
 - ⬜ Vertex AI Integration
 - ⬜ Cohere Integration
