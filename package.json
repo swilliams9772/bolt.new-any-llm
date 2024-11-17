@@ -20,7 +20,10 @@
     "dockerbuild": "docker build -t bolt-ai:development -t bolt-ai:latest --target bolt-ai-development .",
     "typecheck": "tsc",
     "typegen": "wrangler types",
-    "preview": "pnpm run build && pnpm run start"
+    "preview": "pnpm run build && pnpm run start",
+    "deploy:vercel": "vercel",
+    "deploy:netlify": "netlify deploy --prod",
+    "deploy:cloudflare": "wrangler pages publish public/build"
   },
   "engines": {
     "node": ">=18.18.0 <24.0.0"
@@ -88,7 +91,8 @@
     "remix-utils": "^7.6.0",
     "shiki": "^1.9.1",
     "unist-util-visit": "^5.0.0",
-    "@huggingface/inference": "^2.6.4"
+    "@huggingface/inference": "^2.6.4",
+    "cohere-ai": "^7.8.0"
   },
   "devDependencies": {
     "@blitz/eslint-plugin": "0.1.0",
@@ -113,7 +117,9 @@
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^2.0.1",
     "wrangler": "^3.63.2",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "vercel": "^32.0.0",
+    "netlify-cli": "^17.0.0"
   },
   "resolutions": {
     "@typescript-eslint/utils": "^8.0.0-alpha.30"

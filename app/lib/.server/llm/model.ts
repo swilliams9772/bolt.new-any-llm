@@ -8,6 +8,8 @@ import { ollama } from 'ollama-ai-provider';
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createMistral } from '@ai-sdk/mistral';
 import { HfInference } from '@huggingface/inference';
+import { createVertexAI } from '@google-cloud/vertexai';
+import { CohereClient } from 'cohere-ai';
 
 export function getAnthropicModel(apiKey: string, model: string) {
   const anthropic = createAnthropic({
@@ -160,6 +162,85 @@ export function getAzureOpenAIModel(apiKey: string, model: string, baseURL: stri
   return azureOpenAI(model);
 }
 
+export function getPerplexityModel(apiKey: string, model: string) {
+  const perplexity = createOpenAI({
+    baseURL: 'https://api.perplexity.ai',
+    apiKey,
+  });
+
+  return perplexity(model);
+}
+
+export function getVertexAIModel(apiKey: string, model: string, projectId: string) {
+  const vertexai = createVertexAI({
+    project: projectId,
+    location: 'us-central1',
+    credentials: {
+      client_email: env.VERTEX_AI_CLIENT_EMAIL,
+      private_key: env.VERTEX_AI_PRIVATE_KEY,
+    }
+  });
+
+  const model = vertexai.preview.getGenerativeModel({
+    model: model,
+    generation_config: {
+      max_output_tokens: 2048,
+      temperature: 0.7,
+      top_p: 0.95,
+    },
+  });
+
+  return {
+    chat: async function*(messages: any[]) {
+      const formattedMessages = messages.map(m => ({
+        role: m.role === 'user' ? 'USER' : 'ASSISTANT',
+        content: m.content
+      }));
+
+      const response = await model.generateContentStream({
+        contents: formattedMessages,
+      });
+
+      for await (const chunk of response.stream) {
+        if (chunk.candidates?.[0]?.content?.parts?.[0]?.text) {
+          yield { content: chunk.candidates[0].content.parts[0].text };
+        }
+      }
+    }
+  };
+}
+
+export function getCohereModel(apiKey: string, model: string) {
+  const cohere = new CohereClient({ token: apiKey });
+
+  return {
+    chat: async function*(messages: any[]) {
+      const formattedMessages = messages.map(m => ({
+        role: m.role === 'user' ? 'USER' : 'ASSISTANT',
+        message: m.content
+      }));
+
+      try {
+        const stream = await cohere.chatStream({
+          model,
+          message: formattedMessages[formattedMessages.length - 1].message,
+          chatHistory: formattedMessages.slice(0, -1),
+          temperature: 0.7,
+        });
+
+        for await (const chunk of stream) {
+          if (chunk.eventType === 'text-generation') {
+            yield { content: chunk.text };
+          }
+        }
+      } catch (error) {
+        console.error('Cohere API error:', error);
+        throw error;
+      }
+    }
+  };
+}
+
 export async function getModel(provider: string, model: string, env: Env, apiKeys?: Record<string, string>) {
   const maxRetries = 3;
   let retryCount = 0;
@@ -198,6 +279,12 @@ export async function getModel(provider: string, model: string, env: Env, apiKey
             return getTogetherModel(apiKey, model);
           case 'AzureOpenAI':
             return getAzureOpenAIModel(apiKey, model, baseURL);
+          case 'Perplexity':
+            return getPerplexityModel(apiKey, model);
+          case 'VertexAI':
+            return getVertexAIModel(apiKey, model, env.VERTEX_AI_PROJECT_ID);
+          case 'Cohere':
+            return getCohereModel(apiKey, model);
           default:
             if (provider === 'Ollama') {
               // Special handling for Ollama models

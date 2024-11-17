@@ -30,11 +30,11 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ LM Studio Integration (@shaq)
 - ✅ Together Integration (@shaq)
 - ✅ Azure Open AI API Integration (@shaq)
-- ⬜ Perplexity Integration
-- ⬜ Vertex AI Integration
-- ⬜ Cohere Integration
-- ⬜ Deploy directly to Vercel/Netlify/other similar platforms
-- ⬜ Ability to revert code to earlier version
+- ✅ Perplexity Integration (@shaq)
+- ✅ Vertex AI Integration (@shaq)
+- ✅ Cohere Integration (@shaq)
+- ✅ Deploy directly to Vercel/Netlify/other similar platforms (@shaq)
+- ✅ Ability to revert code to earlier version (@shaq)
 - ⬜ Prompt caching
 - ⬜ Better prompt enhancing
 - ⬜ Have LLM plan the project in a MD file for better results/transparency
@@ -250,3 +250,12 @@ Here are some tips to get the most out of Bolt.new:
 - **Scaffold the basics first, then add features**: Make sure the basic structure of your application is in place before diving into more advanced functionality. This helps Bolt understand the foundation of your project and ensure everything is wired up right before building out more advanced functionality.
 
 - **Batch simple instructions**: Save time by combining simple instructions into one message. For example, you can ask Bolt to change the color scheme, add mobile responsiveness, and restart the dev server, all in one go saving you time and reducing API credit consumption significantly.
+
+## Deployment Options
+
+### Vercel Deployment
+1. Fork this repository
+2. Create a new project on Vercel
+3. Connect your forked repository
+4. Set up environment variables in Vercel dashboard
+5. Deploy!

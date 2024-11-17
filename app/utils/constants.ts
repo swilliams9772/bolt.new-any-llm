@@ -142,6 +142,44 @@ const PROVIDER_LIST: ProviderInfo[] = [
     getApiKeyLink: "https://portal.azure.com/#create/Microsoft.CognitiveServicesOpenAI",
     labelForGetApiKey: "Get Azure OpenAI API Key",
     icon: "i-ph:cloud",
+  }, {
+    name: 'Perplexity',
+    staticModels: [
+      { name: 'pplx-7b-chat', label: 'PPLX 7B Chat', provider: 'Perplexity' },
+      { name: 'pplx-70b-chat', label: 'PPLX 70B Chat', provider: 'Perplexity' },
+      { name: 'pplx-7b-online', label: 'PPLX 7B Online', provider: 'Perplexity' },
+      { name: 'pplx-70b-online', label: 'PPLX 70B Online', provider: 'Perplexity' },
+      { name: 'codellama-34b-instruct', label: 'CodeLlama 34B', provider: 'Perplexity' },
+      { name: 'mistral-7b-instruct', label: 'Mistral 7B', provider: 'Perplexity' }
+    ],
+    getDynamicModels: null,
+    getApiKeyLink: "https://www.perplexity.ai/settings/api-keys",
+    labelForGetApiKey: "Get Perplexity API Key",
+    icon: "i-ph:brain",
+  }, {
+    name: 'VertexAI',
+    staticModels: [
+      { name: 'gemini-pro', label: 'Gemini Pro (Vertex AI)', provider: 'VertexAI' },
+      { name: 'gemini-ultra', label: 'Gemini Ultra (Vertex AI)', provider: 'VertexAI' },
+      { name: 'palm2', label: 'PaLM 2 (Vertex AI)', provider: 'VertexAI' },
+      { name: 'codechat-bison', label: 'Code Chat Bison (Vertex AI)', provider: 'VertexAI' }
+    ],
+    getDynamicModels: null,
+    getApiKeyLink: "https://console.cloud.google.com/vertex-ai",
+    labelForGetApiKey: "Set up Vertex AI",
+    icon: "i-ph:cloud-bold",
+  }, {
+    name: 'Cohere',
+    staticModels: [
+      { name: 'command', label: 'Command', provider: 'Cohere' },
+      { name: 'command-light', label: 'Command Light', provider: 'Cohere' },
+      { name: 'command-nightly', label: 'Command Nightly', provider: 'Cohere' },
+      { name: 'command-r', label: 'Command-R', provider: 'Cohere' }
+    ],
+    getDynamicModels: null,
+    getApiKeyLink: "https://dashboard.cohere.com/api-keys",
+    labelForGetApiKey: "Get Cohere API Key",
+    icon: "i-ph:brain-duotone",
   }
 ];
 

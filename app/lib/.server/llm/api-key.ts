@@ -39,6 +39,12 @@ export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Re
       return env.TOGETHER_API_KEY || cloudflareEnv.TOGETHER_API_KEY;
     case 'AzureOpenAI':
       return env.AZURE_OPENAI_API_KEY || cloudflareEnv.AZURE_OPENAI_API_KEY;
+    case 'Perplexity':
+      return env.PERPLEXITY_API_KEY || cloudflareEnv.PERPLEXITY_API_KEY;
+    case 'VertexAI':
+      return env.VERTEX_AI_API_KEY || cloudflareEnv.VERTEX_AI_API_KEY;
+    case 'Cohere':
+      return env.COHERE_API_KEY || cloudflareEnv.COHERE_API_KEY;
     default:
       return "";
   }
@@ -58,6 +64,8 @@ export function getBaseURL(cloudflareEnv: Env, provider: string) {
         return baseUrl;
     case 'AzureOpenAI':
       return cloudflareEnv.AZURE_OPENAI_ENDPOINT || 'https://YOUR_RESOURCE_NAME.openai.azure.com';
+    case 'VertexAI':
+      return `https://${cloudflareEnv.VERTEX_AI_LOCATION || 'us-central1'}-aiplatform.googleapis.com/v1`;
     default:
       return "";
   }
