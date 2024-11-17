@@ -24,6 +24,7 @@ import { FileBreadcrumb } from './FileBreadcrumb';
 import { FileTree } from './FileTree';
 import { Terminal, type TerminalRef } from './terminal/Terminal';
 import React from 'react';
+import { toast } from 'react-hot-toast';
 
 interface EditorPanelProps {
   files?: FileMap;
@@ -68,6 +69,7 @@ export const EditorPanel = memo(
 
     const [activeTerminal, setActiveTerminal] = useState(0);
     const [terminalCount, setTerminalCount] = useState(1);
+    const [isInitializing, setIsInitializing] = useState(true);
 
     const activeFileSegments = useMemo(() => {
       if (!editorDocument) {
@@ -123,113 +125,124 @@ export const EditorPanel = memo(
       }
     };
 
-    return (
-      <PanelGroup direction="vertical">
-        <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
-          <PanelGroup direction="horizontal">
-            <Panel defaultSize={20} minSize={10} collapsible>
-              <div className="flex flex-col border-r border-bolt-elements-borderColor h-full">
-                <PanelHeader>
-                  <div className="i-ph:tree-structure-duotone shrink-0" />
-                  Files
-                </PanelHeader>
-                <FileTree
-                  className="h-full"
-                  files={files}
-                  hideRoot
-                  unsavedFiles={unsavedFiles}
-                  rootFolder={WORK_DIR}
-                  selectedFile={selectedFile}
-                  onFileSelect={onFileSelect}
-                />
-              </div>
-            </Panel>
-            <PanelResizeHandle />
-            <Panel className="flex flex-col" defaultSize={80} minSize={20}>
-              <PanelHeader className="overflow-x-auto">
-                {activeFileSegments?.length && (
-                  <div className="flex items-center flex-1 text-sm">
-                    <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
-                    {activeFileUnsaved && (
-                      <div className="flex gap-1 ml-auto -mr-1.5">
-                        <PanelHeaderButton onClick={onFileSave}>
-                          <div className="i-ph:floppy-disk-duotone" />
-                          Save
-                        </PanelHeaderButton>
-                        <PanelHeaderButton onClick={onFileReset}>
-                          <div className="i-ph:clock-counter-clockwise-duotone" />
-                          Reset
-                        </PanelHeaderButton>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </PanelHeader>
-              <div className="h-full flex-1 overflow-hidden">
-                <CodeMirrorEditor
-                  theme={theme}
-                  editable={!isStreaming && editorDocument !== undefined}
-                  settings={editorSettings}
-                  doc={editorDocument}
-                  autoFocusOnDocumentChange={!isMobile()}
-                  onScroll={onEditorScroll}
-                  onChange={onEditorChange}
-                  onSave={onFileSave}
-                />
-              </div>
-            </Panel>
-          </PanelGroup>
-        </Panel>
-        <PanelResizeHandle />
-        <Panel
-          ref={terminalPanelRef}
-          defaultSize={showTerminal ? DEFAULT_TERMINAL_SIZE : 0}
-          minSize={10}
-          collapsible
-          onExpand={() => {
-            if (!terminalToggledByShortcut.current) {
-              workbenchStore.toggleTerminal(true);
-            }
-          }}
-          onCollapse={() => {
-            if (!terminalToggledByShortcut.current) {
-              workbenchStore.toggleTerminal(false);
-            }
-          }}
-        >
-          <div className="h-full">
-            <div className="bg-bolt-elements-terminals-background h-full flex flex-col">
-              <div className="flex items-center bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor gap-1.5 min-h-[34px] p-2">
-                {Array.from({ length: terminalCount + 1 }, (_, index) => {
-                  const isActive = activeTerminal === index;
+    useEffect(() => {
+      const initializeEditor = async () => {
+        try {
+          setIsInitializing(true);
+          // Wait for editor initialization
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          setIsInitializing(false);
+        } catch (error) {
+          console.error('Editor initialization failed:', error);
+          // Show error state
+          toast.error('Failed to initialize editor. Please refresh the page.');
+        }
+      };
 
-                  return (
-                    <React.Fragment key={index}>
-                      {index == 0 ? (
-                        <button
-                          key={index}
-                          className={classNames(
-                            'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
-                            {
-                              'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary':
-                                isActive,
-                              'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
-                                !isActive,
-                            },
-                          )}
-                          onClick={() => setActiveTerminal(index)}
-                        >
-                          <div className="i-ph:terminal-window-duotone text-lg" />
-                          Bolt Terminal
-                        </button>
-                      ) : (
-                        <React.Fragment>
+      initializeEditor();
+    }, []);
+
+    return (
+      <div className="relative h-full">
+        {isInitializing && (
+          <div className="absolute inset-0 flex items-center justify-center bg-bolt-elements-background-depth-2">
+            <div className="flex flex-col items-center gap-2">
+              <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin" />
+              <div className="text-sm text-bolt-elements-textSecondary">
+                Initializing editor...
+              </div>
+            </div>
+          </div>
+        )}
+        <PanelGroup direction="vertical">
+          <Panel defaultSize={showTerminal ? DEFAULT_EDITOR_SIZE : 100} minSize={20}>
+            <PanelGroup direction="horizontal">
+              <Panel defaultSize={20} minSize={10} collapsible>
+                <div className="flex flex-col border-r border-bolt-elements-borderColor h-full">
+                  <PanelHeader>
+                    <div className="i-ph:tree-structure-duotone shrink-0" />
+                    Files
+                  </PanelHeader>
+                  <FileTree
+                    className="h-full"
+                    files={files}
+                    hideRoot
+                    unsavedFiles={unsavedFiles}
+                    rootFolder={WORK_DIR}
+                    selectedFile={selectedFile}
+                    onFileSelect={onFileSelect}
+                  />
+                </div>
+              </Panel>
+              <PanelResizeHandle />
+              <Panel className="flex flex-col" defaultSize={80} minSize={20}>
+                <PanelHeader className="overflow-x-auto">
+                  {activeFileSegments?.length && (
+                    <div className="flex items-center flex-1 text-sm">
+                      <FileBreadcrumb pathSegments={activeFileSegments} files={files} onFileSelect={onFileSelect} />
+                      {activeFileUnsaved && (
+                        <div className="flex gap-1 ml-auto -mr-1.5">
+                          <PanelHeaderButton onClick={onFileSave}>
+                            <div className="i-ph:floppy-disk-duotone" />
+                            Save
+                          </PanelHeaderButton>
+                          <PanelHeaderButton onClick={onFileReset}>
+                            <div className="i-ph:clock-counter-clockwise-duotone" />
+                            Reset
+                          </PanelHeaderButton>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </PanelHeader>
+                <div className="h-full flex-1 overflow-hidden">
+                  <CodeMirrorEditor
+                    theme={theme}
+                    editable={!isStreaming && editorDocument !== undefined}
+                    settings={editorSettings}
+                    doc={editorDocument}
+                    autoFocusOnDocumentChange={!isMobile()}
+                    onScroll={onEditorScroll}
+                    onChange={onEditorChange}
+                    onSave={onFileSave}
+                  />
+                </div>
+              </Panel>
+            </PanelGroup>
+          </Panel>
+          <PanelResizeHandle />
+          <Panel
+            ref={terminalPanelRef}
+            defaultSize={showTerminal ? DEFAULT_TERMINAL_SIZE : 0}
+            minSize={10}
+            collapsible
+            onExpand={() => {
+              if (!terminalToggledByShortcut.current) {
+                workbenchStore.toggleTerminal(true);
+              }
+            }}
+            onCollapse={() => {
+              if (!terminalToggledByShortcut.current) {
+                workbenchStore.toggleTerminal(false);
+              }
+            }}
+          >
+            <div className="h-full">
+              <div className="bg-bolt-elements-terminals-background h-full flex flex-col">
+                <div className="flex items-center bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor gap-1.5 min-h-[34px] p-2">
+                  {Array.from({ length: terminalCount + 1 }, (_, index) => {
+                    const isActive = activeTerminal === index;
+
+                    return (
+                      <React.Fragment key={index}>
+                        {index == 0 ? (
                           <button
                             key={index}
                             className={classNames(
                               'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
                               {
-                                'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary': isActive,
+                                'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary':
+                                  isActive,
                                 'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
                                   !isActive,
                               },
@@ -237,27 +250,59 @@ export const EditorPanel = memo(
                             onClick={() => setActiveTerminal(index)}
                           >
                             <div className="i-ph:terminal-window-duotone text-lg" />
-                            Terminal {terminalCount > 1 && index}
+                            Bolt Terminal
                           </button>
-                        </React.Fragment>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-                {terminalCount < MAX_TERMINALS && <IconButton icon="i-ph:plus" size="md" onClick={addTerminal} />}
-                <IconButton
-                  className="ml-auto"
-                  icon="i-ph:caret-down"
-                  title="Close"
-                  size="md"
-                  onClick={() => workbenchStore.toggleTerminal(false)}
-                />
-              </div>
-              {Array.from({ length: terminalCount + 1 }, (_, index) => {
-                const isActive = activeTerminal === index;
-                if (index == 0) {
-                  logger.info('Starting bolt terminal');
+                        ) : (
+                          <React.Fragment>
+                            <button
+                              key={index}
+                              className={classNames(
+                                'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
+                                {
+                                  'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary': isActive,
+                                  'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
+                                    !isActive,
+                                },
+                              )}
+                              onClick={() => setActiveTerminal(index)}
+                            >
+                              <div className="i-ph:terminal-window-duotone text-lg" />
+                              Terminal {terminalCount > 1 && index}
+                            </button>
+                          </React.Fragment>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                  {terminalCount < MAX_TERMINALS && <IconButton icon="i-ph:plus" size="md" onClick={addTerminal} />}
+                  <IconButton
+                    className="ml-auto"
+                    icon="i-ph:caret-down"
+                    title="Close"
+                    size="md"
+                    onClick={() => workbenchStore.toggleTerminal(false)}
+                  />
+                </div>
+                {Array.from({ length: terminalCount + 1 }, (_, index) => {
+                  const isActive = activeTerminal === index;
+                  if (index == 0) {
+                    logger.info('Starting bolt terminal');
 
+                    return (
+                      <Terminal
+                        key={index}
+                        className={classNames('h-full overflow-hidden', {
+                          hidden: !isActive,
+                        })}
+                        ref={(ref) => {
+                          terminalRefs.current.push(ref);
+                        }}
+                        onTerminalReady={(terminal) => workbenchStore.attachBoltTerminal(terminal)}
+                        onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
+                        theme={theme}
+                      />
+                    );
+                  }
                   return (
                     <Terminal
                       key={index}
@@ -267,31 +312,17 @@ export const EditorPanel = memo(
                       ref={(ref) => {
                         terminalRefs.current.push(ref);
                       }}
-                      onTerminalReady={(terminal) => workbenchStore.attachBoltTerminal(terminal)}
+                      onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
                       onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
                       theme={theme}
                     />
                   );
-                }
-                return (
-                  <Terminal
-                    key={index}
-                    className={classNames('h-full overflow-hidden', {
-                      hidden: !isActive,
-                    })}
-                    ref={(ref) => {
-                      terminalRefs.current.push(ref);
-                    }}
-                    onTerminalReady={(terminal) => workbenchStore.attachTerminal(terminal)}
-                    onTerminalResize={(cols, rows) => workbenchStore.onTerminalResize(cols, rows)}
-                    theme={theme}
-                  />
-                );
-              })}
+                })}
+              </div>
             </div>
-          </div>
-        </Panel>
-      </PanelGroup>
+          </Panel>
+        </PanelGroup>
+      </div>
     );
   },
 );

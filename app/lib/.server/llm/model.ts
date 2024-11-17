@@ -100,31 +100,62 @@ export function getXAIModel(apiKey: string, model: string) {
   return openai(model);
 }
 export function getModel(provider: string, model: string, env: Env, apiKeys?: Record<string, string>) {
-  const apiKey = getAPIKey(env, provider, apiKeys);
-  const baseURL = getBaseURL(env, provider);
+  const maxRetries = 3;
+  let retryCount = 0;
 
-  switch (provider) {
-    case 'Anthropic':
-      return getAnthropicModel(apiKey, model);
-    case 'OpenAI':
-      return getOpenAIModel(apiKey, model);
-    case 'Groq':
-      return getGroqModel(apiKey, model);
-    case 'OpenRouter':
-      return getOpenRouterModel(apiKey, model);
-    case 'Google':
-      return getGoogleModel(apiKey, model);
-    case 'OpenAILike':
-      return getOpenAILikeModel(baseURL,apiKey, model);
-    case 'Deepseek':
-      return getDeepseekModel(apiKey, model);
-    case 'Mistral':
-      return  getMistralModel(apiKey, model);
-    case 'LMStudio':
-      return getLMStudioModel(baseURL, model);
-    case 'xAI':
-      return getXAIModel(apiKey, model);
-    default:
-      return getOllamaModel(baseURL, model);
-  }
+  const initializeModel = async () => {
+    try {
+      const apiKey = getAPIKey(env, provider, apiKeys);
+      const baseURL = getBaseURL(env, provider);
+
+      // Add initialization check
+      const modelInstance = await (async () => {
+        switch (provider) {
+          case 'Anthropic':
+            return getAnthropicModel(apiKey, model);
+          case 'OpenAI':
+            return getOpenAIModel(apiKey, model);
+          case 'Groq':
+            return getGroqModel(apiKey, model);
+          case 'OpenRouter':
+            return getOpenRouterModel(apiKey, model);
+          case 'Google':
+            return getGoogleModel(apiKey, model);
+          case 'OpenAILike':
+            return getOpenAILikeModel(baseURL,apiKey, model);
+          case 'Deepseek':
+            return getDeepseekModel(apiKey, model);
+          case 'Mistral':
+            return  getMistralModel(apiKey, model);
+          case 'LMStudio':
+            return getLMStudioModel(baseURL, model);
+          case 'xAI':
+            return getXAIModel(apiKey, model);
+          default:
+            if (provider === 'Ollama') {
+              // Special handling for Ollama models
+              return getOllamaModel(baseURL, model);
+            }
+            throw new Error(`Unsupported provider: ${provider}`);
+        }
+      })();
+
+      // Verify model is properly initialized
+      if (!modelInstance) {
+        throw new Error('Model initialization failed');
+      }
+
+      return modelInstance;
+    } catch (error) {
+      if (retryCount < maxRetries) {
+        retryCount++;
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        return initializeModel();
+      }
+      throw error;
+    }
+  };
+
+  return initializeModel();
 }
