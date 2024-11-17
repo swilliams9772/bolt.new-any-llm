@@ -1,4 +1,5 @@
-import { ActionFunctionArgs } from '@remix-run/node';
+import type { ActionFunctionArgs } from '@remix-run/cloudflare';
+import { createVertexAI } from '~/lib/.server/llm/vertex-ai';
 import { ProjectPlanner } from '~/lib/.server/planner/project-planner';
 
 export async function action({ request, context }: ActionFunctionArgs) {

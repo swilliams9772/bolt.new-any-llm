@@ -1,4 +1,4 @@
-import { diff } from 'diff';
+import * as diffLib from 'diff';
 import type { FileChange } from '~/types/file';
 
 class FileLockManager {
@@ -32,7 +32,7 @@ class FileLockManager {
       return null;
     }
 
-    const changes = diff.createPatch(filePath, currentContent, newContent);
+    const changes = diffLib.createPatch(filePath, currentContent, newContent);
     
     return {
       path: filePath,

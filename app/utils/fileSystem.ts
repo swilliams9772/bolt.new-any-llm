@@ -1,4 +1,4 @@
-import type { FileMap } from '~/lib/stores/files';
+import type { FileMap, FileLoadResult } from '~/lib/stores/files';
 
 // Constants for file handling
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -31,7 +31,7 @@ export async function readFilesFromDirectory(
   directoryHandle: FileSystemDirectoryHandle,
   basePath: string = '/home/project',
   options: ReadDirectoryOptions = {}
-): Promise<FileMap> {
+): Promise<FileLoadResult> {
   const {
     maxFileSize = MAX_FILE_SIZE,
     maxTotalSize = MAX_TOTAL_SIZE,
@@ -40,12 +40,13 @@ export async function readFilesFromDirectory(
   } = options;
 
   const files: FileMap = {};
+  const skippedFiles: string[] = [];
   let totalSize = 0;
   const progress: FileLoadingProgress = {
     totalFiles: 0,
     processedFiles: 0,
     totalSize: 0,
-    skippedFiles: []
+    skippedFiles
   };
 
   // First pass to count total files
@@ -76,21 +77,21 @@ export async function readFilesFromDirectory(
       
       // Check file size
       if (file.size > maxFileSize) {
-        progress.skippedFiles.push(`${path} (size: ${formatFileSize(file.size)})`);
+        skippedFiles.push(`${path} (size: ${formatFileSize(file.size)})`);
         onProgress?.(progress);
         return;
       }
 
       // Check total size
       if (totalSize + file.size > maxTotalSize) {
-        progress.skippedFiles.push(`${path} (total size limit exceeded)`);
+        skippedFiles.push(`${path} (total size limit exceeded)`);
         onProgress?.(progress);
         return;
       }
 
       // Check file type
       if (!isAllowedFileType(file)) {
-        progress.skippedFiles.push(`${path} (unsupported type: ${file.type})`);
+        skippedFiles.push(`${path} (unsupported type: ${file.type})`);
         onProgress?.(progress);
         return;
       }
@@ -108,7 +109,7 @@ export async function readFilesFromDirectory(
         
         onProgress?.(progress);
       } catch (error) {
-        progress.skippedFiles.push(`${path} (error reading file)`);
+        skippedFiles.push(`${path} (error reading file)`);
         onProgress?.(progress);
         console.warn(`Skipping file ${path} - ${error.message}`);
       }
@@ -124,7 +125,7 @@ export async function readFilesFromDirectory(
     await processEntry(entry, `${basePath}/${entry.name}`);
   }
 
-  return files;
+  return { files, skippedFiles };
 }
 
 function isExcluded(path: string, patterns: RegExp[]): boolean {

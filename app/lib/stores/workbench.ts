@@ -12,11 +12,35 @@ import { TerminalStore } from './terminal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Octokit, type RestEndpointMethodTypes } from "@octokit/rest";
-import * as nodePath from 'node:path';
+import * as nodePath from 'path';
 import type { WebContainerProcess } from '@webcontainer/api';
-import { computeFileModifications } from './files';
+import { computeFileModifications } from '~/utils/diff';
 import { readFilesFromDirectory } from '~/utils/fileSystem';
 import { toast } from 'react-hot-toast';
+
+interface FileWithContent {
+  type: 'file' | 'folder';
+  content?: string;
+  isBinary?: boolean;
+}
+
+interface FileLoadResult {
+  files: Record<string, FileWithContent>;
+  skippedFiles?: string[];
+}
+
+function formatFileSize(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = bytes;
+  let unitIndex = 0;
+  
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  
+  return `${size.toFixed(1)}${units[unitIndex]}`;
+}
 
 export interface ArtifactState {
   id: string;
@@ -476,7 +500,7 @@ export class WorkbenchStore {
         })
       );
 
-      const validBlobs = blobs.filter(Boolean);
+      const validBlobs = blobs.filter((blob): blob is { path: string; sha: string } => blob !== undefined);
 
       if (validBlobs.length === 0) {
         throw new Error('No valid files to push');
@@ -528,27 +552,25 @@ export class WorkbenchStore {
 
       toast.success('Successfully pushed to GitHub fork!');
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error pushing to GitHub:', error);
-      toast.error('Failed to push to GitHub: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error('Failed to push to GitHub: ' + message);
     }
   }
 
   async loadLocalProject(
     directoryHandle: FileSystemDirectoryHandle, 
     options?: LoadProjectOptions
-  ) {
+  ): Promise<boolean> {
     try {
       const webcontainerInstance = await webcontainer;
-      
-      // Track loading progress
       let loadingToast = toast.loading('Loading project...');
       let lastProgressUpdate = Date.now();
       
-      const files = await readFilesFromDirectory(directoryHandle, '/home/project', {
+      const result = await readFilesFromDirectory(directoryHandle, '/home/project', {
         ...options,
         onProgress: (progress) => {
-          // Update toast only every 100ms to prevent too frequent updates
           const now = Date.now();
           if (now - lastProgressUpdate > 100) {
             toast.loading(
@@ -559,17 +581,14 @@ export class WorkbenchStore {
           }
         }
       });
-      
-      // Show warning if files were skipped
-      const skippedFiles = files.skippedFiles;
-      if (skippedFiles?.length > 0) {
+
+      if (result.skippedFiles && result.skippedFiles.length > 0) {
         toast.warning(
-          `Skipped ${skippedFiles.length} files. Click for details`,
+          `Skipped ${result.skippedFiles.length} files. Click for details`,
           {
             duration: 5000,
             onClick: () => {
-              // Show modal with skipped files list
-              alert(`Skipped files:\n${skippedFiles.join('\n')}`);
+              alert(`Skipped files:\n${result.skippedFiles!.join('\n')}`);
             }
           }
         );
@@ -581,17 +600,19 @@ export class WorkbenchStore {
       this.#pendingFileChanges.clear();
       
       // Write all files to WebContainer
-      for (const [path, content] of Object.entries(files)) {
-        const relativePath = path.replace(/^\/home\/project\//, '');
-        await webcontainerInstance.fs.writeFile(relativePath, content);
+      for (const [path, dirent] of Object.entries(result.files)) {
+        if (dirent?.type === 'file' && !dirent.isBinary) {
+          const relativePath = path.replace(/^\/home\/project\//, '');
+          await webcontainerInstance.fs.writeFile(relativePath, dirent.content || '');
+        }
       }
 
       // Update file store and documents
-      this.setDocuments(files);
+      this.setDocuments(result.files);
       
       // Select first file
       if (this.#filesStore.filesCount > 0 && this.currentDocument.get() === undefined) {
-        for (const [filePath, dirent] of Object.entries(files)) {
+        for (const [filePath, dirent] of Object.entries(result.files)) {
           if (dirent?.type === 'file') {
             this.setSelectedFile(filePath);
             break;
@@ -601,9 +622,10 @@ export class WorkbenchStore {
 
       toast.success('Project loaded successfully', { id: loadingToast });
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error loading local project:', error);
-      toast.error('Failed to load project: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error('Failed to load project: ' + message);
       throw error;
     }
   }

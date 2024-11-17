@@ -1,20 +1,74 @@
 import { cloudflareDevProxyVitePlugin as remixCloudflareDevProxy, vitePlugin as remixVitePlugin } from '@remix-run/dev';
 import UnoCSS from 'unocss/vite';
-import { defineConfig, type ViteDevServer } from 'vite';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
-import { optimizeCssModules } from 'vite-plugin-optimize-css-modules';
+import { defineConfig, type ConfigEnv, type ViteDevServer } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { optimizeCssModules } from 'vite-plugin-optimize-css-modules';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { esbuildCommonjs } from '@originjs/vite-plugin-commonjs';
 
-export default defineConfig((config) => {
+export default defineConfig(({ command, mode }: ConfigEnv) => {
+  const isSsr = mode === 'development' || command === 'build';
+  
   return {
     build: {
       target: 'esnext',
+      commonjsOptions: {
+        transformMixedEsModules: true,
+        include: [
+          /@google-cloud\/vertexai/,
+          /@remix-run\/cloudflare/,
+          /ai/,
+          /common-tags/,
+          /diff/
+        ],
+        exclude: ['node_modules/vite/**'],
+      },
+      rollupOptions: {
+        output: {
+          format: 'esm',
+        },
+      },
+    },
+    optimizeDeps: {
+      include: [
+        ...(isSsr ? [] : ['path-browserify']),
+        '@google-cloud/vertexai',
+        '@remix-run/cloudflare',
+        'ai',
+        'common-tags',
+        'diff'
+      ],
+      esbuildOptions: {
+        define: {
+          global: 'globalThis',
+        },
+        platform: 'node',
+      },
+    },
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+      'global': 'globalThis',
     },
     plugins: [
-      nodePolyfills({
-        include: ['path', 'buffer'],
+      {
+        name: 'module-polyfill',
+        config(config) {
+          return {
+            ...config,
+            resolve: {
+              ...config.resolve,
+              alias: {
+                ...config.resolve?.alias,
+                module: 'rollup-plugin-node-polyfills/polyfills/module',
+              },
+            },
+          };
+        },
+      },
+      esbuildCommonjs(['@google-cloud/vertexai'], {
+        skipPreBuild: true,
       }),
-      config.mode !== 'test' && remixCloudflareDevProxy(),
+      mode !== 'test' && remixCloudflareDevProxy(),
       remixVitePlugin({
         future: {
           v3_fetcherPersist: true,
@@ -25,9 +79,16 @@ export default defineConfig((config) => {
       UnoCSS(),
       tsconfigPaths(),
       chrome129IssuePlugin(),
-      config.mode === 'production' && optimizeCssModules({ apply: 'build' }),
-    ],
-    envPrefix:["VITE_","OPENAI_LIKE_API_","OLLAMA_API_BASE_URL","LMSTUDIO_API_BASE_URL"],
+      command === 'build' && optimizeCssModules({ apply: 'build' }),
+      nodePolyfills({
+        include: ['buffer', 'process'],
+        globals: {
+          Buffer: true,
+          process: true,
+        },
+      }),
+    ].filter(Boolean),
+    envPrefix: ["VITE_", "OPENAI_LIKE_API_", "OLLAMA_API_BASE_URL", "LMSTUDIO_API_BASE_URL"],
     css: {
       preprocessorOptions: {
         scss: {
@@ -35,6 +96,12 @@ export default defineConfig((config) => {
         },
       },
     },
+    esbuild: {
+      supported: {
+        'dynamic-import': true,
+        'import-meta': true,
+      },
+    }
   };
 });
 
@@ -53,11 +120,9 @@ function chrome129IssuePlugin() {
             res.end(
               '<body><h1>Please use Chrome Canary for testing.</h1><p>Chrome 129 has an issue with JavaScript modules & Vite local development, see <a href="https://github.com/stackblitz/bolt.new/issues/86#issuecomment-2395519258">for more information.</a></p><p><b>Note:</b> This only impacts <u>local development</u>. `pnpm run build` and `pnpm run start` will work fine in this browser.</p></body>',
             );
-
             return;
           }
         }
-
         next();
       });
     },

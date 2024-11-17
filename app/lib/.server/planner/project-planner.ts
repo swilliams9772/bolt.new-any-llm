@@ -1,6 +1,8 @@
 import { streamText } from '../llm/stream-text';
 import type { Message } from 'ai';
 import { stripIndents } from 'common-tags';
+import { createVertexAI } from '~/lib/.server/llm/vertex-ai';
+import type { ActionFunctionArgs } from '@remix-run/cloudflare';
 
 export class ProjectPlanner {
   private env: Env;

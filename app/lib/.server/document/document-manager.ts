@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises';
-import { extname } from 'path';
+import { extname } from 'node:path';
 import { isText } from 'istextorbinary';
 
 interface Document {

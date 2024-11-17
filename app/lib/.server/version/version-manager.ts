@@ -1,5 +1,5 @@
+import * as diffLib from 'diff';
 import type { FileChange } from '~/types/file';
-import { diff, applyPatch } from 'diff';
 
 interface Version {
   id: string;
@@ -40,14 +40,14 @@ export class VersionManager {
     const targetFiles = new Map(this.currentFiles);
     for (let i = this.versions.length - 1; i > versionIndex; i--) {
       for (const change of this.versions[i].changes) {
-        const patch = diff.parsePatch(change.diff)[0];
-        const revertedContent = applyPatch(change.newContent, patch, { reverse: true });
+        const patch = diffLib.parsePatch(change.diff)[0];
+        const revertedContent = diffLib.applyPatch(change.newContent, patch, { reverse: true });
         
         targetFiles.set(change.path, revertedContent);
         revertChanges.push({
           path: change.path,
           newContent: revertedContent,
-          diff: diff.createPatch(change.path, change.newContent, revertedContent)
+          diff: diffLib.createPatch(change.path, change.newContent, revertedContent)
         });
       }
     }

@@ -6,6 +6,7 @@ import { MAX_TOKENS } from './constants';
 import { getSystemPrompt } from './prompts';
 import { MODEL_LIST, DEFAULT_MODEL, DEFAULT_PROVIDER, MODEL_REGEX, PROVIDER_REGEX } from '~/utils/constants';
 import { cacheManager } from '../cache/cache-manager';
+import { createVertexAI } from '~/lib/.server/llm/vertex-ai';
 
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;

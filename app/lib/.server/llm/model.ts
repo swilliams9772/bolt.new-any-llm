@@ -8,7 +8,7 @@ import { ollama } from 'ollama-ai-provider';
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createMistral } from '@ai-sdk/mistral';
 import { HfInference } from '@huggingface/inference';
-import { createVertexAI } from '@google-cloud/vertexai';
+import { createVertexAI } from '~/lib/.server/llm/vertex-ai';
 import { CohereClient } from 'cohere-ai';
 
 export function getAnthropicModel(apiKey: string, model: string) {
@@ -171,7 +171,7 @@ export function getPerplexityModel(apiKey: string, model: string) {
   return perplexity(model);
 }
 
-export function getVertexAIModel(apiKey: string, model: string, projectId: string) {
+export function getVertexAIModel(apiKey: string, modelName: string, projectId: string) {
   const vertexai = createVertexAI({
     project: projectId,
     location: 'us-central1',
@@ -181,8 +181,8 @@ export function getVertexAIModel(apiKey: string, model: string, projectId: strin
     }
   });
 
-  const model = vertexai.preview.getGenerativeModel({
-    model: model,
+  const vertexModel = vertexai.preview.getGenerativeModel({
+    model: modelName,
     generation_config: {
       max_output_tokens: 2048,
       temperature: 0.7,
@@ -197,7 +197,7 @@ export function getVertexAIModel(apiKey: string, model: string, projectId: strin
         content: m.content
       }));
 
-      const response = await model.generateContentStream({
+      const response = await vertexModel.generateContentStream({
         contents: formattedMessages,
       });
 
