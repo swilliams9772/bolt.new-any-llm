@@ -14,6 +14,7 @@ import { saveAs } from 'file-saver';
 import { Octokit, type RestEndpointMethodTypes } from "@octokit/rest";
 import * as nodePath from 'node:path';
 import type { WebContainerProcess } from '@webcontainer/api';
+import { computeFileModifications } from './files';
 
 export interface ArtifactState {
   id: string;
@@ -42,6 +43,8 @@ export class WorkbenchStore {
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
   #boltTerminal: { terminal: ITerminal; process: WebContainerProcess } | undefined;
+  #pendingFileChanges: Map<string, string> = new Map();
+  #saveDebounceTimeout: number | undefined;
 
   constructor() {
     if (import.meta.hot) {
@@ -142,12 +145,51 @@ export class WorkbenchStore {
 
       if (unsavedChanges) {
         newUnsavedFiles.add(currentDocument.filePath);
+        this.#queueFileChange(currentDocument.filePath, newContent);
       } else {
         newUnsavedFiles.delete(currentDocument.filePath);
       }
 
       this.unsavedFiles.set(newUnsavedFiles);
     }
+  }
+
+  #queueFileChange(filePath: string, content: string) {
+    this.#pendingFileChanges.set(filePath, content);
+
+    if (this.#saveDebounceTimeout) {
+      window.clearTimeout(this.#saveDebounceTimeout);
+    }
+
+    this.#saveDebounceTimeout = window.setTimeout(() => {
+      this.#processPendingChanges();
+    }, 1000);
+  }
+
+  async #processPendingChanges() {
+    if (this.#pendingFileChanges.size === 0) {
+      return;
+    }
+
+    // Compute diffs for all pending changes at once
+    const currentFiles = this.files.get();
+    const modifications = computeFileModifications(
+      currentFiles,
+      this.#pendingFileChanges
+    );
+
+    // Only process files that have meaningful changes
+    if (modifications) {
+      const changedFiles = Object.keys(modifications);
+      for (const filePath of changedFiles) {
+        const content = this.#pendingFileChanges.get(filePath);
+        if (content !== undefined) {
+          await this.saveFile(filePath);
+        }
+      }
+    }
+
+    this.#pendingFileChanges.clear();
   }
 
   setCurrentDocumentScrollPosition(position: ScrollPosition) {

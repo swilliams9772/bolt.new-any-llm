@@ -42,6 +42,29 @@ function extractPropertiesFromMessage(message: Message): { model: string; provid
   return { model, provider, content: cleanedContent };
 }
 
+function chunkResponse(content: string, maxChunkSize: number = 1000): string[] {
+  const chunks: string[] = [];
+  let currentChunk = '';
+  
+  // Split by newlines to preserve code block structure
+  const lines = content.split('\n');
+  
+  for (const line of lines) {
+    if ((currentChunk + line).length > maxChunkSize && currentChunk) {
+      chunks.push(currentChunk);
+      currentChunk = line;
+    } else {
+      currentChunk += (currentChunk ? '\n' : '') + line;
+    }
+  }
+  
+  if (currentChunk) {
+    chunks.push(currentChunk);
+  }
+  
+  return chunks;
+}
+
 export function streamText(
   messages: Messages, 
   env: Env, 
@@ -73,5 +96,13 @@ export function streamText(
     maxTokens: MAX_TOKENS,
     messages: convertToCoreMessages(processedMessages),
     ...options,
+    // Add streaming options for smaller models
+    chunkSize: 512,
+    onResponse: async (response) => {
+      if (response.length > MAX_TOKENS) {
+        return chunkResponse(response);
+      }
+      return response;
+    }
   });
 }

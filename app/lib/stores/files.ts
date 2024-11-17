@@ -47,6 +47,8 @@ export class FilesStore {
    */
   files: MapStore<FileMap> = import.meta.hot?.data.files ?? map({});
 
+  #lockedFiles: Set<string> = new Set();
+
   get filesCount() {
     return this.#size;
   }
@@ -96,19 +98,51 @@ export class FilesStore {
         unreachable('Expected content to be defined');
       }
 
-      await webcontainer.fs.writeFile(relativePath, content);
-
-      if (!this.#modifiedFiles.has(filePath)) {
-        this.#modifiedFiles.set(filePath, oldContent);
+      // Skip if content hasn't changed
+      if (oldContent === content) {
+        return;
       }
 
-      // we immediately update the file and don't rely on the `change` event coming from the watcher
-      this.files.setKey(filePath, { type: 'file', content, isBinary: false });
+      // Check if file is locked
+      if (this.#lockedFiles.has(filePath)) {
+        logger.info('File is locked, skipping write:', filePath);
+        return;
+      }
 
-      logger.info('File updated');
+      // Compute diff before writing
+      const modifications = computeFileModifications(
+        { [filePath]: { type: 'file', content: oldContent, isBinary: false } },
+        new Map([[filePath, content]])
+      );
+
+      // If no modifications were found, skip the write
+      if (!modifications) {
+        logger.info('No meaningful changes detected, skipping write:', filePath);
+        return;
+      }
+
+      // Lock the file before writing
+      this.#lockedFiles.add(filePath);
+
+      // Only write if the diff indicates meaningful changes
+      const fileModification = modifications[filePath];
+      if (fileModification) {
+        await webcontainer.fs.writeFile(relativePath, content);
+
+        if (!this.#modifiedFiles.has(filePath)) {
+          this.#modifiedFiles.set(filePath, oldContent);
+        }
+
+        // Update the file content and unlock
+        this.files.setKey(filePath, { type: 'file', content, isBinary: false });
+        logger.info('File updated with diff-based changes');
+      }
+
+      this.#lockedFiles.delete(filePath);
     } catch (error) {
+      // Make sure to unlock the file even if there's an error
+      this.#lockedFiles.delete(filePath);
       logger.error('Failed to update file content\n\n', error);
-
       throw error;
     }
   }
