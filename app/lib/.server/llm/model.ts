@@ -84,12 +84,12 @@ export function getOpenRouterModel(apiKey: string, model: string) {
 }
 
 export function getLMStudioModel(baseURL: string, model: string) {
-  const lmstudio = createOpenAI({
-    baseUrl: `${baseURL}/v1`,
-    apiKey: "",
+  const openai = createOpenAI({
+    baseURL: baseURL || 'http://localhost:1234',
+    apiKey: 'not-needed', // LM Studio doesn't require an API key
   });
 
-  return lmstudio(model);
+  return openai(model);
 }
 
 export function getXAIModel(apiKey: string, model: string) {

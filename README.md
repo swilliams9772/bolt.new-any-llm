@@ -22,12 +22,12 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ xAI Grok Beta Integration (@milutinke)
 - ✅ HuggingFace Integration
 - ✅ Better prompting for smaller LLMs (@shaq)
-- ⬜ **HIGH PRIORITY** - Prevent Bolt from rewriting files as often (file locking and diffs)
-- ⬜ **HIGH PRIORITY** Load local projects into the app
-- ⬜ **HIGH PRIORITY** - Attach images to prompts
-- ⬜ **HIGH PRIORITY** - Run agents in the backend as opposed to a single model call
-- ⬜ Mobile friendly
-- ⬜ LM Studio Integration
+- ✅ Prevent Bolt from rewriting files as often (file locking and diffs) (@shaq)
+- ✅ Load local projects into the app (@shaq)
+- ✅ Attach images to prompts (@shaq)
+- ✅ Run agents in the backend as opposed to a single model call (@shaq)
+- ✅ Mobile friendly (@shaq)
+- ✅ LM Studio Integration (@shaq)
 - ⬜ Together Integration
 - ⬜ Azure Open AI API Integration
 - ⬜ Perplexity Integration

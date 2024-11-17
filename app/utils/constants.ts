@@ -111,8 +111,8 @@ const PROVIDER_LIST: ProviderInfo[] = [
     name: 'LMStudio',
     staticModels: [],
     getDynamicModels: getLMStudioModels,
-    getApiKeyLink: 'https://lmstudio.ai/',
-    labelForGetApiKey: 'Get LMStudio',
+    getApiKeyLink: "https://lmstudio.ai/",
+    labelForGetApiKey: "Download LM Studio",
     icon: "i-ph:cloud-arrow-down",
   }, {
     name: 'HuggingFace',

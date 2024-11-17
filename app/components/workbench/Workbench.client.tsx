@@ -16,6 +16,7 @@ import { cubicEasingFn } from '~/utils/easings';
 import { renderLogger } from '~/utils/logger';
 import { EditorPanel } from './EditorPanel';
 import { Preview } from './Preview';
+import { useResponsive } from '~/hooks/useResponsive';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -116,117 +117,43 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     }
   }, []);
 
+  const { isMobile } = useResponsive();
+
   return (
     chatStarted && (
-      <motion.div
-        initial="closed"
-        animate={showWorkbench ? 'open' : 'closed'}
-        variants={workbenchVariants}
-        className="z-workbench"
-      >
-        <div
-          className={classNames(
-            'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 bolt-ease-cubic-bezier',
-            {
-              'left-[var(--workbench-left)]': showWorkbench,
-              'left-[100%]': !showWorkbench,
-            },
-          )}
-        >
-          <div className="absolute inset-0 px-6">
-            <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden">
-              <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor">
-                <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
-                <div className="ml-auto" />
-                {selectedView === 'code' && (
-                  <>
-                    <PanelHeaderButton
-                      className="mr-1 text-sm"
-                      onClick={() => {
-                        workbenchStore.downloadZip();
-                      }}
-                    >
-                      <div className="i-ph:code" />
-                      Download Code
-                    </PanelHeaderButton>
-                    <PanelHeaderButton className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
-                      {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:cloud-arrow-down" />}
-                      {isSyncing ? 'Syncing...' : 'Sync Files'}
-                    </PanelHeaderButton>
-                    <PanelHeaderButton
-                      className="mr-1 text-sm"
-                      onClick={() => {
-                        workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
-                      }}
-                    >
-                      <div className="i-ph:terminal" />
-                      Toggle Terminal
-                    </PanelHeaderButton>
-                    <PanelHeaderButton
-                      className="mr-1 text-sm"
-                      onClick={() => {
-                        const repoName = prompt("Please enter a name for your new GitHub repository:", "bolt-generated-project");
-                        if (!repoName) {
-                          alert("Repository name is required. Push to GitHub cancelled.");
-                          return;
-                        }
-                        const githubUsername = prompt("Please enter your GitHub username:");
-                        if (!githubUsername) {
-                          alert("GitHub username is required. Push to GitHub cancelled.");
-                          return;
-                        }
-                        const githubToken = prompt("Please enter your GitHub personal access token:");
-                        if (!githubToken) {
-                          alert("GitHub token is required. Push to GitHub cancelled.");
-                          return;
-                        }
-                        
-                      workbenchStore.pushToGitHub(repoName, githubUsername, githubToken);  
-                      }}
-                    >
-                      <div className="i-ph:github-logo" />
-                      Push to GitHub
-                    </PanelHeaderButton>
-                  </>
-                )}
-                <IconButton
-                  icon="i-ph:x-circle"
-                  className="-mr-1"
-                  size="xl"
-                  onClick={() => {
-                    workbenchStore.showWorkbench.set(false);
-                  }}
-                />
-              </div>
-              <div className="relative flex-1 overflow-hidden">
-                <View
-                  initial={{ x: selectedView === 'code' ? 0 : '-100%' }}
-                  animate={{ x: selectedView === 'code' ? 0 : '-100%' }}
-                >
-                  <EditorPanel
-                    editorDocument={currentDocument}
-                    isStreaming={isStreaming}
-                    selectedFile={selectedFile}
-                    files={files}
-                    unsavedFiles={unsavedFiles}
-                    onFileSelect={onFileSelect}
-                    onEditorScroll={onEditorScroll}
-                    onEditorChange={onEditorChange}
-                    onFileSave={onFileSave}
-                    onFileReset={onFileReset}
-                  />
-                </View>
-                <View
-                  initial={{ x: selectedView === 'preview' ? 0 : '100%' }}
-                  animate={{ x: selectedView === 'preview' ? 0 : '100%' }}
-                >
-                  <Preview />
-                </View>
-              </div>
+      <div className={classNames(
+        'flex h-full',
+        isMobile ? 'flex-col' : 'flex-row'
+      )}>
+        {/* File Explorer */}
+        <div className={classNames(
+          'bg-bolt-background-secondary',
+          isMobile ? 'h-[30vh]' : 'w-64'
+        )}>
+          <FileExplorer />
+        </div>
+
+        {/* Editor and Preview */}
+        <div className="flex-1 flex flex-col">
+          <div className={classNames(
+            'flex',
+            isMobile ? 'flex-col' : 'flex-row'
+          )}>
+            <div className={classNames(
+              'bg-bolt-background-primary',
+              isMobile ? 'h-[40vh]' : 'flex-1'
+            )}>
+              <Editor />
+            </div>
+            <div className={classNames(
+              'bg-bolt-background-primary',
+              isMobile ? 'h-[30vh]' : 'flex-1'
+            )}>
+              <Preview />
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     )
   );
 });

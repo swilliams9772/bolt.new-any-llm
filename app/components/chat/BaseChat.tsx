@@ -13,6 +13,7 @@ import { SendButton } from './SendButton.client';
 import { useState } from 'react';
 import { APIKeyManager } from './APIKeyManager';
 import Cookies from 'js-cookie';
+import { useResponsive } from '~/hooks/useResponsive';
 
 import styles from './BaseChat.module.scss';
 import type { ProviderInfo } from '~/utils/types';
@@ -120,7 +121,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
     const [modelList, setModelList] = useState(MODEL_LIST);
-    const isMobileView = useCallback(() => isMobile(), []);
+    const { isMobile } = useResponsive();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
 
     useEffect(() => {
       // Load API keys from cookies on component mount
@@ -166,7 +168,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           styles.BaseChat,
           'relative flex h-full w-full overflow-hidden bg-bolt-elements-background-depth-1',
           {
-            'flex-col': isMobileView(),
+            'flex-col': isMobile,
           }
         )}
         data-chat-visible={showChat}
@@ -176,10 +178,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow min-w-[var(--chat-min-width)] h-full')}>
             {!chatStarted && (
               <div id="intro" className={classNames("mt-[26vh] max-w-chat mx-auto text-center", {
-                "mt-[15vh]": isMobileView()
+                "mt-[15vh]": isMobile
               })}>
                 <h1 className={classNames("text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in", {
-                  "text-4xl": isMobileView()
+                  "text-4xl": isMobile
                 })}>
                   Where ideas begin
                 </h1>
@@ -208,7 +210,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               <div
                 className={classNames('relative w-full max-w-chat mx-auto z-prompt', {
                   'sticky bottom-0': chatStarted,
-                  'px-2': isMobileView(),
+                  'px-2': isMobile,
                 })}
               >
                 <ModelSelector
@@ -219,7 +221,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   provider={provider}
                   setProvider={setProvider}
                   providerList={PROVIDER_LIST}
-                  isMobile={isMobileView()}
+                  isMobile={isMobile}
                 />
                 {provider && (
                   <APIKeyManager
