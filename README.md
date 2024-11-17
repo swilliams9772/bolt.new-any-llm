@@ -214,7 +214,7 @@ You'll see this new model in the list of Ollama models along with all the others
 
 To make new LLMs available to use in this version of Bolt.new, head on over to `app/utils/constants.ts` and find the constant MODEL_LIST. Each element in this array is an object that has the model ID for the name (get this from the provider's API documentation), a label for the frontend model dropdown, and the provider. 
 
-By default, Anthropic, OpenAI, Groq, and Ollama are implemented as providers, but the YouTube video for this repo covers how to extend this to work with more providers if you wish!
+By default, Anthropic, OpenAI, Groq, Ollama, HuggingFace, and other providers are implemented, but the YouTube video for this repo covers how to extend this to work with more providers if you wish!
 
 When you add a new model to the MODEL_LIST array, it will immediately be available to use when you run the app locally or reload it. For Ollama models, make sure you have the model installed already before trying to use it here!
 
