@@ -36,11 +36,20 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ Deploy directly to Vercel/Netlify/other similar platforms (@shaq)
 - ✅ Ability to revert code to earlier version (@shaq)
 - ✅ Prompt caching (@shaq)
-- ⬜ Better prompt enhancing
-- ⬜ Have LLM plan the project in a MD file for better results/transparency
+- ✅ Better prompt enhancing (@shaq)
+- ✅ Have LLM plan the project in a MD file for better results/transparency (@shaq)
 - ⬜ VSCode Integration with git-like confirmations
 - ⬜ Upload documents for knowledge - UI design templates, a code base to reference coding style, etc.
 - ⬜ Voice prompting
+
+## Project Planning
+
+The application now supports automatic project planning in markdown format. When you start a new project, Bolt.new will:
+1. Generate a detailed project plan with architecture, implementation steps, and testing strategy
+2. Save the plan as a markdown file in your project
+3. Update the plan as you make changes or add new features
+
+This helps maintain transparency and provides a clear roadmap for your development process.
 
 # Bolt.new: AI-Powered Full-Stack Web Development in the Browser
 
