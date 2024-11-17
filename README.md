@@ -38,8 +38,8 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ✅ Prompt caching (@shaq)
 - ✅ Better prompt enhancing (@shaq)
 - ✅ Have LLM plan the project in a MD file for better results/transparency (@shaq)
-- ⬜ VSCode Integration with git-like confirmations
-- ⬜ Upload documents for knowledge - UI design templates, a code base to reference coding style, etc.
+- ✅ VSCode Integration with git-like confirmations (@shaq)
+- ✅ Upload documents for knowledge - UI design templates, a code base to reference coding style, etc. (@shaq)
 - ⬜ Voice prompting
 
 ## Project Planning
@@ -268,3 +268,23 @@ Here are some tips to get the most out of Bolt.new:
 3. Connect your forked repository
 4. Set up environment variables in Vercel dashboard
 5. Deploy!
+
+## VSCode-like Integration
+
+The application now includes a VSCode-like source control panel that allows you to:
+1. Stage/unstage changes
+2. View diffs
+3. Commit changes with messages
+4. Discard unwanted changes
+
+This provides a familiar git-like workflow for managing your code changes.
+
+## Document Knowledge Base
+
+The application now supports uploading reference documents to provide context for AI responses:
+1. UI design templates
+2. Code style guides
+3. Reference codebases
+4. Other documentation
+
+These documents are analyzed and relevant portions are included in the context when generating responses.
