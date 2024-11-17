@@ -15,6 +15,8 @@ import { Octokit, type RestEndpointMethodTypes } from "@octokit/rest";
 import * as nodePath from 'node:path';
 import type { WebContainerProcess } from '@webcontainer/api';
 import { computeFileModifications } from './files';
+import { readFilesFromDirectory } from '~/utils/fileSystem';
+import { toast } from 'react-hot-toast';
 
 export interface ArtifactState {
   id: string;
@@ -28,6 +30,12 @@ export type ArtifactUpdateState = Pick<ArtifactState, 'title' | 'closed'>;
 type Artifacts = MapStore<Record<string, ArtifactState>>;
 
 export type WorkbenchViewType = 'code' | 'preview';
+
+export interface LoadProjectOptions {
+  maxFileSize?: number;
+  maxTotalSize?: number;
+  excludePatterns?: RegExp[];
+}
 
 export class WorkbenchStore {
   #previewsStore = new PreviewsStore(webcontainer);
@@ -523,6 +531,80 @@ export class WorkbenchStore {
     } catch (error) {
       console.error('Error pushing to GitHub:', error);
       toast.error('Failed to push to GitHub: ' + error.message);
+    }
+  }
+
+  async loadLocalProject(
+    directoryHandle: FileSystemDirectoryHandle, 
+    options?: LoadProjectOptions
+  ) {
+    try {
+      const webcontainerInstance = await webcontainer;
+      
+      // Track loading progress
+      let loadingToast = toast.loading('Loading project...');
+      let lastProgressUpdate = Date.now();
+      
+      const files = await readFilesFromDirectory(directoryHandle, '/home/project', {
+        ...options,
+        onProgress: (progress) => {
+          // Update toast only every 100ms to prevent too frequent updates
+          const now = Date.now();
+          if (now - lastProgressUpdate > 100) {
+            toast.loading(
+              `Loading project: ${progress.processedFiles}/${progress.totalFiles} files (${formatFileSize(progress.totalSize)})`, 
+              { id: loadingToast }
+            );
+            lastProgressUpdate = now;
+          }
+        }
+      });
+      
+      // Show warning if files were skipped
+      const skippedFiles = files.skippedFiles;
+      if (skippedFiles?.length > 0) {
+        toast.warning(
+          `Skipped ${skippedFiles.length} files. Click for details`,
+          {
+            duration: 5000,
+            onClick: () => {
+              // Show modal with skipped files list
+              alert(`Skipped files:\n${skippedFiles.join('\n')}`);
+            }
+          }
+        );
+      }
+
+      // Reset current state
+      this.#filesStore.resetFileModifications();
+      this.unsavedFiles.set(new Set());
+      this.#pendingFileChanges.clear();
+      
+      // Write all files to WebContainer
+      for (const [path, content] of Object.entries(files)) {
+        const relativePath = path.replace(/^\/home\/project\//, '');
+        await webcontainerInstance.fs.writeFile(relativePath, content);
+      }
+
+      // Update file store and documents
+      this.setDocuments(files);
+      
+      // Select first file
+      if (this.#filesStore.filesCount > 0 && this.currentDocument.get() === undefined) {
+        for (const [filePath, dirent] of Object.entries(files)) {
+          if (dirent?.type === 'file') {
+            this.setSelectedFile(filePath);
+            break;
+          }
+        }
+      }
+
+      toast.success('Project loaded successfully', { id: loadingToast });
+      return true;
+    } catch (error) {
+      console.error('Error loading local project:', error);
+      toast.error('Failed to load project: ' + error.message);
+      throw error;
     }
   }
 }

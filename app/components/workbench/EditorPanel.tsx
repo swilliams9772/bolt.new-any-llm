@@ -142,6 +142,17 @@ export const EditorPanel = memo(
       initializeEditor();
     }, []);
 
+    const handleLoadLocalProject = async () => {
+      try {
+        const directoryHandle = await window.showDirectoryPicker();
+        await workbenchStore.loadLocalProject(directoryHandle);
+        toast.success('Project loaded successfully');
+      } catch (error) {
+        console.error('Error loading project:', error);
+        toast.error('Failed to load project: ' + error.message);
+      }
+    };
+
     return (
       <div className="relative h-full">
         {isInitializing && (

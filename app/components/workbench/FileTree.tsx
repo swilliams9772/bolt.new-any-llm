@@ -19,6 +19,7 @@ interface Props {
   hiddenFiles?: Array<string | RegExp>;
   unsavedFiles?: Set<string>;
   className?: string;
+  isLoading?: boolean;
 }
 
 export const FileTree = memo(
@@ -33,6 +34,7 @@ export const FileTree = memo(
     hiddenFiles,
     className,
     unsavedFiles,
+    isLoading = false,
   }: Props) => {
     renderLogger.trace('FileTree');
 
@@ -112,39 +114,45 @@ export const FileTree = memo(
 
     return (
       <div className={classNames('text-sm', className ,'overflow-y-auto')}>
-        {filteredFileList.map((fileOrFolder) => {
-          switch (fileOrFolder.kind) {
-            case 'file': {
-              return (
-                <File
-                  key={fileOrFolder.id}
-                  selected={selectedFile === fileOrFolder.fullPath}
-                  file={fileOrFolder}
-                  unsavedChanges={unsavedFiles?.has(fileOrFolder.fullPath)}
-                  onClick={() => {
-                    onFileSelect?.(fileOrFolder.fullPath);
-                  }}
-                />
-              );
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin" />
+          </div>
+        ) : (
+          filteredFileList.map((fileOrFolder) => {
+            switch (fileOrFolder.kind) {
+              case 'file': {
+                return (
+                  <File
+                    key={fileOrFolder.id}
+                    selected={selectedFile === fileOrFolder.fullPath}
+                    file={fileOrFolder}
+                    unsavedChanges={unsavedFiles?.has(fileOrFolder.fullPath)}
+                    onClick={() => {
+                      onFileSelect?.(fileOrFolder.fullPath);
+                    }}
+                  />
+                );
+              }
+              case 'folder': {
+                return (
+                  <Folder
+                    key={fileOrFolder.id}
+                    folder={fileOrFolder}
+                    selected={allowFolderSelection && selectedFile === fileOrFolder.fullPath}
+                    collapsed={collapsedFolders.has(fileOrFolder.fullPath)}
+                    onClick={() => {
+                      toggleCollapseState(fileOrFolder.fullPath);
+                    }}
+                  />
+                );
+              }
+              default: {
+                return undefined;
+              }
             }
-            case 'folder': {
-              return (
-                <Folder
-                  key={fileOrFolder.id}
-                  folder={fileOrFolder}
-                  selected={allowFolderSelection && selectedFile === fileOrFolder.fullPath}
-                  collapsed={collapsedFolders.has(fileOrFolder.fullPath)}
-                  onClick={() => {
-                    toggleCollapseState(fileOrFolder.fullPath);
-                  }}
-                />
-              );
-            }
-            default: {
-              return undefined;
-            }
-          }
-        })}
+          })
+        )}
       </div>
     );
   },
